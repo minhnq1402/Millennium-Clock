@@ -2,134 +2,105 @@ module Display (
     input wire clk,
     input wire rst_n,
     input wire en,
-    input wire smh_dmy,         
-    input wire dem_chinh,       
+    input wire smh_dmy,       
+    input wire dem_chinh,      
     input wire [1:0] blink_led,
-
-
     input wire [7:0] bcd_ss,
     input wire [7:0] bcd_mm,
     input wire [7:0] bcd_hh,
     input wire [7:0] bcd_dd,
     input wire [7:0] bcd_mo,
     input wire [15:0] bcd_yyyy,
-
-
-    output reg [6:0] led_segment, 
-    output reg [7:0] dis_sel     
+    output wire [55:0] parallel_led_outputs
 );
-
-
-    reg [16:0] scan_counter;
-    wire scan_clk;
 
     reg [24:0] blink_counter; 
     wire blink_enable;
 
-
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            scan_counter <= 0;
             blink_counter <= 0;
         end else begin
-            scan_counter <= scan_counter + 1;
             blink_counter <= blink_counter + 1;
         end
     end
-
-    assign scan_clk = scan_counter[16];
     assign blink_enable = blink_counter[24];
-
-
-    reg [2:0] digit_select; 
-    always @(posedge scan_clk or negedge rst_n) begin
-        if (!rst_n) begin
-            digit_select <= 3'd0;
-        end else begin
-            digit_select <= digit_select + 1;
-        end
-    end
-
-
-    reg [3:0] bcd_to_decode;
-    always @(smh_dmy or digit_select or bcd_ss or bcd_mm or bcd_hh or bcd_dd or bcd_mo or bcd_yyyy) begin
-        if (smh_dmy == 0) begin // Hiển thị Giờ, Phút, Giây
-            case(digit_select)
-                3'd0: bcd_to_decode = bcd_ss[3:0];
-                3'd1: bcd_to_decode = bcd_ss[7:4];
-                3'd2: bcd_to_decode = bcd_mm[3:0];
-                3'd3: bcd_to_decode = bcd_mm[7:4];
-                3'd4: bcd_to_decode = bcd_hh[3:0];
-                3'd5: bcd_to_decode = bcd_hh[7:4];
-                3'd6: bcd_to_decode = 4'hF;
-                3'd7: bcd_to_decode = 4'hF;
-                default: bcd_to_decode = 4'hF;
-            endcase
-        end else begin // Hiển thị Ngày, Tháng, Năm
-            case(digit_select)
-                3'd0: bcd_to_decode = bcd_yyyy[3:0];
-                3'd1: bcd_to_decode = bcd_yyyy[7:4];
-                3'd2: bcd_to_decode = bcd_yyyy[11:8];
-                3'd3: bcd_to_decode = bcd_yyyy[15:12];
-                3'd4: bcd_to_decode = bcd_mo[3:0];
-                3'd5: bcd_to_decode = bcd_mo[7:4];
-                3'd6: bcd_to_decode = bcd_dd[3:0];
-                3'd7: bcd_to_decode = bcd_dd[7:4];
-                default: bcd_to_decode = 4'hF;
-            endcase
-        end
-    end
-
-    // 7-segment decoder
-    reg [6:0] decoded_seg;
-    always @(bcd_to_decode) begin
-        case(bcd_to_decode)
-            4'h0: decoded_seg = 7'b1000000;
-            4'h1: decoded_seg = 7'b1111001;
-            4'h2: decoded_seg = 7'b0100100;
-            4'h3: decoded_seg = 7'b0110000;
-            4'h4: decoded_seg = 7'b0011001;
-            4'h5: decoded_seg = 7'b0010010;
-            4'h6: decoded_seg = 7'b0000010;
-            4'h7: decoded_seg = 7'b1111000;
-            4'h8: decoded_seg = 7'b0000000;
-            4'h9: decoded_seg = 7'b0010000;
-            default: decoded_seg = 7'b1111111;
+    
+    function [6:0] decode_7seg;
+        input [3:0] bcd;
+        case(bcd)
+            4'h0: decode_7seg = 7'b1000000;
+            4'h1: decode_7seg = 7'b1111001;
+            4'h2: decode_7seg = 7'b0100100;
+            4'h3: decode_7seg = 7'b0110000;
+            4'h4: decode_7seg = 7'b0011001;
+            4'h5: decode_7seg = 7'b0010010;
+            4'h6: decode_7seg = 7'b0000010;
+            4'h7: decode_7seg = 7'b1111000;
+            4'h8: decode_7seg = 7'b0000000;
+            4'h9: decode_7seg = 7'b0010000;
+            default: decode_7seg = 7'b1111111;
         endcase
-    end
+    endfunction
 
-    // Logic for blinking
-    reg display_off;
-    always @(dem_chinh or blink_enable or smh_dmy or blink_led or digit_select) begin
-        display_off = 1'b0; 
+    reg [6:0] seg_data_0, seg_data_1, seg_data_2, seg_data_3;
+    reg [6:0] seg_data_4, seg_data_5, seg_data_6, seg_data_7;
+
+    always @(smh_dmy, dem_chinh, blink_led, blink_enable, 
+              bcd_ss, bcd_mm, bcd_hh, bcd_dd, bcd_mo, bcd_yyyy) 
+    begin
+        reg [3:0] bcd_in_0, bcd_in_1, bcd_in_2, bcd_in_3;
+        reg [3:0] bcd_in_4, bcd_in_5, bcd_in_6, bcd_in_7;
+        
+        if (smh_dmy == 0) begin
+            bcd_in_0 = bcd_ss[3:0];
+            bcd_in_1 = bcd_ss[7:4];
+            bcd_in_2 = bcd_mm[3:0];
+            bcd_in_3 = bcd_mm[7:4];
+            bcd_in_4 = bcd_hh[3:0];
+            bcd_in_5 = bcd_hh[7:4];
+            bcd_in_6 = 4'hF;
+            bcd_in_7 = 4'hF;
+        end else begin
+            bcd_in_0 = bcd_yyyy[3:0];
+            bcd_in_1 = bcd_yyyy[7:4];
+            bcd_in_2 = bcd_yyyy[11:8];
+            bcd_in_3 = bcd_yyyy[15:12];
+            bcd_in_4 = bcd_mo[3:0];
+            bcd_in_5 = bcd_mo[7:4];
+            bcd_in_6 = bcd_dd[3:0];
+            bcd_in_7 = bcd_dd[7:4];
+        end
+
+        seg_data_0 = decode_7seg(bcd_in_0);
+        seg_data_1 = decode_7seg(bcd_in_1);
+        seg_data_2 = decode_7seg(bcd_in_2);
+        seg_data_3 = decode_7seg(bcd_in_3);
+        seg_data_4 = decode_7seg(bcd_in_4);
+        seg_data_5 = decode_7seg(bcd_in_5);
+        seg_data_6 = decode_7seg(bcd_in_6);
+        seg_data_7 = decode_7seg(bcd_in_7);
+
         if (dem_chinh && blink_enable) begin
             if (smh_dmy == 0) begin
                 case (blink_led)
-                    2'b01: if (digit_select == 4 || digit_select == 5) display_off = 1'b1;
-                    2'b10: if (digit_select == 2 || digit_select == 3) display_off = 1'b1;
-                    2'b11: if (digit_select == 0 || digit_select == 1) display_off = 1'b1;
-                    default: display_off = 1'b0;
+                    2'b11: begin seg_data_0 = 7'h7F; seg_data_1 = 7'h7F; end
+                    2'b10: begin seg_data_2 = 7'h7F; seg_data_3 = 7'h7F; end
+                    2'b01: begin seg_data_4 = 7'h7F; seg_data_5 = 7'h7F; end
+                    default: begin end
                 endcase
             end else begin
                 case (blink_led)
-                    2'b01: if (digit_select == 6 || digit_select == 7) display_off = 1'b1;
-                    2'b10: if (digit_select == 4 || digit_select == 5) display_off = 1'b1;
-                    2'b11: if (digit_select >= 0 && digit_select <= 3) display_off = 1'b1;
-                    default: display_off = 1'b0;
+                    2'b11: begin seg_data_0=7'h7F; seg_data_1=7'h7F; seg_data_2=7'h7F; seg_data_3=7'h7F; end
+                    2'b10: begin seg_data_4 = 7'h7F; seg_data_5 = 7'h7F; end
+                    2'b01: begin seg_data_6 = 7'h7F; seg_data_7 = 7'h7F; end
+                    default: begin end
                 endcase
             end
         end
     end
 
-
-    always @(en or display_off or decoded_seg or digit_select) begin
-        if (!en || display_off) begin
-            led_segment = 7'b1111111;
-            dis_sel = 8'b11111111;
-        end else begin
-            led_segment = decoded_seg;
-            dis_sel = ~(1 << digit_select);
-        end
-    end
-
+    assign parallel_led_outputs = (en) ? {seg_data_7, seg_data_6, seg_data_5, seg_data_4,
+                                        seg_data_3, seg_data_2, seg_data_1, seg_data_0}
+                                     : 56'hFFFFFFFFFFFFFF;
 endmodule
