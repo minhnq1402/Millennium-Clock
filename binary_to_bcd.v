@@ -1,46 +1,25 @@
-module binary_to_bcd_no_arith (
-    input wire [5:0] binary_in,
-    output reg [7:0] bcd_out
+module bin2bcd (
+    input wire [5:0] bin,
+    output reg [7:0] bcd
 );
-
-    reg [3:0] bcd_tens;
-    reg [3:0] bcd_ones;
-
-
-    always @(binary_in) begin
-
-        reg [5:0] temp_binary;
-        reg [3:0] temp_bcd_tens;
-        reg [3:0] temp_bcd_ones;
-
-
-        temp_binary = binary_in;
-        temp_bcd_tens = 4'h0;
-        temp_bcd_ones = 4'h0;
-
-
-        for (int i = 0; i < 6; i = i + 1) begin
-
-            if (temp_bcd_ones >= 5) begin
-                temp_bcd_ones = temp_bcd_ones + 3;
-            end
-            if (temp_bcd_tens >= 5) begin
-                temp_bcd_tens = temp_bcd_tens + 3;
-            end
-
-
-            temp_bcd_tens = temp_bcd_tens << 1;
-            temp_bcd_tens[0] = temp_bcd_ones[3]; 
-            
-            temp_bcd_ones = temp_bcd_ones << 1;
-            temp_bcd_ones[0] = temp_binary[5]; 
-            
-            temp_binary = temp_binary << 1;
-        end
+    always @(bin) begin
+        reg [7:0] bcd_temp; 
+        integer i;
+        bcd_temp = 8'b0;
         
+        for (i = 0; i <= 5; i = i + 1) begin
+            if (bcd_temp[3:0] >= 5) begin
+                bcd_temp[3:0] = bcd_temp[3:0] + 3;
+            end
+            
+            if (bcd_temp[7:4] >= 5) begin
+                bcd_temp[7:4] = bcd_temp[7:4] + 3;
+            end
 
-        bcd_tens = temp_bcd_tens;
-        bcd_ones = temp_bcd_ones;
-        bcd_out = {bcd_tens, bcd_ones};
+            bcd_temp = {bcd_temp[6:0], bin[5-i]};
+        end
+
+        bcd = bcd_temp;
     end
+
 endmodule
