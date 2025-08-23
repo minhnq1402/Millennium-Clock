@@ -57,6 +57,6 @@ Mô phỏng bằng trình giả lập Verilog: Biên dịch các file Verilog v�
 -   Chạy các testbench này bằng trình mô phỏng Verilog của bạn để xác minh tính đúng đắn của chức năng.
 <div align="center">
 
-### made by MinhNQ142
+### made by MinhNQ142,PhamTRieuMinh,DoThanhBinh from HUST IOTK68
 
 </div>
