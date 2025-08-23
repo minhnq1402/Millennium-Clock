@@ -53,14 +53,14 @@ module Display (
         reg [3:0] bcd_in_4, bcd_in_5, bcd_in_6, bcd_in_7;
         
         if (smh_dmy == 0) begin
-            bcd_in_0 = bcd_ss[3:0];
-            bcd_in_1 = bcd_ss[7:4];
-            bcd_in_2 = bcd_mm[3:0];
-            bcd_in_3 = bcd_mm[7:4];
-            bcd_in_4 = bcd_hh[3:0];
-            bcd_in_5 = bcd_hh[7:4];
-            bcd_in_6 = 4'hF;
-            bcd_in_7 = 4'hF;
+            bcd_in_0 = 4'hF;
+            bcd_in_1 = 4'hF;
+            bcd_in_2 = bcd_ss[3:0];
+            bcd_in_3 = bcd_ss[7:4];
+            bcd_in_4 = bcd_mm[3:0];
+            bcd_in_5 = bcd_mm[7:4];
+            bcd_in_6 = bcd_hh[3:0];
+            bcd_in_7 = bcd_hh[7:4];
         end else begin
             bcd_in_0 = bcd_yyyy[3:0];
             bcd_in_1 = bcd_yyyy[7:4];

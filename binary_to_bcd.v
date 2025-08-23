@@ -2,9 +2,10 @@ module bin2bcd (
     input wire [5:0] bin,
     output reg [7:0] bcd
 );
+    reg [7:0] bcd_temp; 
+    integer i;
     always @(bin) begin
-        reg [7:0] bcd_temp; 
-        integer i;
+
         bcd_temp = 8'b0;
         
         for (i = 0; i <= 5; i = i + 1) begin
